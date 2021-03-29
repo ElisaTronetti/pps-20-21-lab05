@@ -39,6 +39,8 @@ sealed trait List[A] {
 
   def takeRight(n: Int): List[A]
 
+  def collect[B](op: PartialFunction[A,B]): List[B]
+
   // right-associative construction: 10 :: 20 :: 30 :: Nil()
   def ::(head: A): List[A] = Cons(head,this)
 }
@@ -115,19 +117,45 @@ trait ListImplementation[A] extends List[A] {
     case Nil() => Nil()
   }
 
-  override def zipRight: List[(A,Int)] = ??? // questions: what is the type of keyword ???
+  override def zipRight: List[(A,Int)] = {
+      @tailrec
+      def _zipRight(list: List[A], index: Int = 0, res:List[(A, Int)] = List.nil): List[(A,Int)] = list match {
+        case h::t => _zipRight(t, index+1, (h,index)::res)
+        case _ => res
+    }
+    _zipRight(this).reverse()
+  }
 
-  override def partition(pred: A => Boolean): (List[A],List[A]) = ???
+  //filtering by predicate and than do the same thing negating the predicate
+  override def partition(pred: A => Boolean): (List[A],List[A]) = (filter(pred), filter(!pred(_)))
 
-  override def span(pred: A => Boolean): (List[A],List[A]) = ???
+  override def span(pred: A => Boolean): (List[A],List[A]) = {
+    @tailrec
+    def _span(list: List[A], res:(List[A],List[A]) = (List.nil, List.nil)): (List[A],List[A]) = list match {
+      case h::t => if (pred(h)) _span(t, (res._1.::(h), res._2)) else (res._1, list)
+      case _ => res
+    }
+    _span(this)
+  }
 
   /**
     *
     * @throws UnsupportedOperationException if the list is empty
     */
-  override def reduce(op: (A,A)=>A): A = ???
+  override def reduce(op: (A,A)=>A): A = this match{
+    case Cons(h, t) =>
+      var result = h
+      for (elem <- t) {
+        result = op(result, elem)
+      }
+      result
+    case Nil() => throw new UnsupportedOperationException()
+  }
 
-  override def takeRight(n: Int): List[A] = ???
+  override def takeRight(n: Int): List[A] = span(_!=get(n).get)._2
+
+  //filter by the predicate defined in partial function and map the filtered map
+  override def collect[B](op: PartialFunction[A, B]): List[B] = filter(op.isDefinedAt).map(op)
 }
 
 // Factories
@@ -183,5 +211,5 @@ object ListsTest extends App {
   println(l.takeRight(2)) // Cons(30,Cons(40,Nil()))
 
   // Ex. 6: collect
-  // println(l.collect { case x if x<15 || x>35 => x-1 }) // Cons(9, Cons(39, Nil()))
+  println(l.collect { case x if x<15 || x>35 => x-1 }) // Cons(9, Cons(39, Nil()))
 }
