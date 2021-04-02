@@ -1,6 +1,5 @@
 package u05lab.code
 
-import scala.collection.mutable.{Map => MutableMap}
 import scala.collection.{Set, mutable}
 
 //enum for kind
