@@ -161,27 +161,39 @@ trait ListImplementation[A] extends List[A] {
 
 object sequenceOnList {
 
-  //I'm still thinking about this, cause I can see that it is kinda similar to foldRight (and yes, I think that
-  // foldRight is the one that returns the elements in the correct order).
+  //I'm still thinking about this, cause I can see that it is kinda similar to foldLeft.
   //The main problem that at the moment I can't solve is that I don't want that the recursion of foldRight continues
-  //if it find a None element in the head. I solve this problem here but I don't know how to solve this in foldRight, otherwise
-  //it returns the elements after None in the list. (I'm going to update this when I come up with a better idea...)
+  //if it find a None element in the head.
   def sequence[A](a: List[Option[A]]): Option[List[A]] = {
     @tailrec
     def _sequence(a:List[Option[A]])(accumulator: Option[List[A]]): Option[List[A]]= a match {
       case Cons(h,t) => h match {
         case Some(v) => {
-          val updatedAccumulator = accumulator match {
+          _sequence(t)(Option(accumulator match {
             case None => List(v)
             case Some(value) => value.append(List(v))
-          }
-          _sequence(t)(Option(updatedAccumulator))
+          }))
         }
         case _ => Option.empty
       }
       case _ => accumulator
     }
     _sequence(a)(Option.empty)
+  }
+
+  //This implementation uses foldLeft... I don't know if it's better, 'cause to stop the recursion I use
+  //an exception.
+  //I'm still thinking if I can find a better solution... 
+  def sequence1[A](a: List[Option[A]]): Option[List[A]] = try {
+    a.foldLeft(Option.empty: Option[List[A]])((acc, elem) => elem match {
+      case Some(v) =>
+        acc match {
+          case Some(value) => Option(value.append(List(v)))
+          case _ => Option(List(v))
+        }
+    })
+  } catch  {
+    case _: MatchError => Option.empty
   }
 
 }
@@ -242,8 +254,8 @@ object ListsTest extends App {
   println(l.collect { case x if x<15 || x>35 => x-1 }) // Cons(9, Cons(39, Nil()))
   */
   val l: List[Option[Int]] = List(Some(1), Some(2), Some(3))
-  println(sequenceOnList.sequence(l)) //Some(List(1,2,3))
+  println(sequenceOnList.sequence1(l)) //Some(List(1,2,3))
 
   val l1: List[Option[Int]] = List(Some(1), None, Some(3))
-  println(sequenceOnList.sequence(l1)) //None
+  println(sequenceOnList.sequence1(l1)) //None
 }
