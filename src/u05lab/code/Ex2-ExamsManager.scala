@@ -33,8 +33,8 @@ object ExamResult {
 trait ExamsManager{
   def createNewCall(call: String)
   def addStudentResult(call: String, student: String, result: ExamResult)
-  def allStudentFromCall(call: String): Set[String]
-  def evaluationsMapFromCall(call: String): Map[String, Int]
+  def allStudentFromCall(call: String): Option[Set[String]]
+  def evaluationsMapFromCall(call: String): Option[Map[String, Int]]
   def resultsMapFromStudent(student: String): Map[String, String]
   def bestResultFromStudent(student: String): Option[Int]
 }
@@ -44,20 +44,23 @@ class ExamsManagerImpl extends ExamsManager {
 
   override def createNewCall(call: String): Unit = callsAndResultsMap += (call -> Map())
 
-  override def addStudentResult(call: String, student: String, result: ExamResult): Unit = {
+  override def addStudentResult(call: String, student: String, result: ExamResult){
     val updateEvaluations = callsAndResultsMap(call) + (student -> result)
     callsAndResultsMap += (call -> updateEvaluations)
   }
 
-  //handle optional
-  override def allStudentFromCall(call: String): Set[String] = callsAndResultsMap(call).keySet
-
-  //handle optional
-  override def evaluationsMapFromCall(call: String): Map[String, Int] = callsAndResultsMap(call) collect {
-      case (name, result) if(result.kind.equals(Kind.SUCCEEDED))=> name -> result.evaluation.get
+  override def allStudentFromCall(call: String): Option[Set[String]] = callsAndResultsMap.get(call) match {
+    case Some(m) => Option(m.keySet)
+    case _  => Option.empty
   }
 
-  //handle optional
+  override def evaluationsMapFromCall(call: String): Option[Map[String, Int]] = callsAndResultsMap.get(call) match {
+    case Some(m) => Option(m collect {
+      case (name, result) if result.kind.equals(Kind.SUCCEEDED) => name -> result.evaluation.get
+    })
+    case _ => Option.empty
+  }
+
   override def resultsMapFromStudent(student: String): Map[String, String] = examsFromStudent(student) map {
     case (call, result) => call -> result.kind.toString
   }

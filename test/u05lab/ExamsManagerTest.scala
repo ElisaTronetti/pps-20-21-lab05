@@ -68,24 +68,27 @@ class ExamsManagerTest {
 
   @Test def testExamsManagerGetStudentsByCall() {
     prepareExams()
-    assertEquals(Set("rossi","bianchi", "verdi", "neri"), examsManager.allStudentFromCall("january"))
-    assertEquals(Set("rossi", "bianchi", "verdi"), examsManager.allStudentFromCall("february"))
-    assertEquals(Set("rossi", "bianchi", "viola"), examsManager.allStudentFromCall("march"))
+    assertEquals(Set("rossi","bianchi", "verdi", "neri"), examsManager.allStudentFromCall("january").get)
+    assertEquals(Set("rossi", "bianchi", "verdi"), examsManager.allStudentFromCall("february").get)
+    assertEquals(Set("rossi", "bianchi", "viola"), examsManager.allStudentFromCall("march").get)
+    assertEquals(Option.empty, examsManager.allStudentFromCall("april"))
   }
 
   @Test def testExamsManagerGetEvaluationFromCall() {
     prepareExams()
-    assertEquals(2, examsManager.evaluationsMapFromCall("january").size)
-    assertEquals(28, examsManager.evaluationsMapFromCall("january")("verdi"))
-    assertEquals(30, examsManager.evaluationsMapFromCall("january")("neri"))
+    assertEquals(2, examsManager.evaluationsMapFromCall("january").get.size)
+    assertEquals(28, examsManager.evaluationsMapFromCall("january").get("verdi"))
+    assertEquals(30, examsManager.evaluationsMapFromCall("january").get("neri"))
 
-    assertEquals(2, examsManager.evaluationsMapFromCall("february").size)
-    assertEquals(20, examsManager.evaluationsMapFromCall("february")("bianchi"))
-    assertEquals(30, examsManager.evaluationsMapFromCall("february")("verdi"))
+    assertEquals(2, examsManager.evaluationsMapFromCall("february").get.size)
+    assertEquals(20, examsManager.evaluationsMapFromCall("february").get("bianchi"))
+    assertEquals(30, examsManager.evaluationsMapFromCall("february").get("verdi"))
 
-    assertEquals(2, examsManager.evaluationsMapFromCall("march").size)
-    assertEquals(25, examsManager.evaluationsMapFromCall("march")("rossi"))
-    assertEquals(25, examsManager.evaluationsMapFromCall("march")("bianchi"))
+    assertEquals(2, examsManager.evaluationsMapFromCall("march").get.size)
+    assertEquals(25, examsManager.evaluationsMapFromCall("march").get("rossi"))
+    assertEquals(25, examsManager.evaluationsMapFromCall("march").get("bianchi"))
+
+    assertEquals(Option.empty, examsManager.evaluationsMapFromCall("april"))
   }
 
   @Test def testResultsFromStudent() {
@@ -102,6 +105,8 @@ class ExamsManagerTest {
 
     assertEquals(3, examsManager.resultsMapFromStudent("bianchi").size)
     assertEquals(Kind.RETIRED.toString, examsManager.resultsMapFromStudent("bianchi")("january"))
+
+    assertEquals(Map.empty, examsManager.resultsMapFromStudent("notPresent"))
   }
 
   @Test def testBestResultFromStudent(): Unit ={
