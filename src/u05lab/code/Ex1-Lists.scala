@@ -142,8 +142,8 @@ trait ListImplementation[A] extends List[A] {
     *
     * @throws UnsupportedOperationException if the list is empty
     */
-  override def reduce(op: (A,A)=>A): A = this match{
-    case Cons(h, t) =>
+  override def reduce(op: (A,A) => A): A = this match {
+    case h :: t =>
       var result = h
       for (elem <- t) {
         result = op(result, elem)
@@ -152,7 +152,7 @@ trait ListImplementation[A] extends List[A] {
     case Nil() => throw new UnsupportedOperationException()
   }
 
-  override def takeRight(n: Int): List[A] = span(_!=get(n).get)._2
+  override def takeRight(n: Int): List[A] = span(_ != get(n).get)._2
 
   //filter by the predicate defined in partial function and map the filtered map
   override def collect[B](op: PartialFunction[A, B]): List[B] = filter(op.isDefinedAt).map(op)
@@ -162,18 +162,17 @@ trait ListImplementation[A] extends List[A] {
 object sequenceOnList {
 
   //I'm still thinking about this, cause I can see that it is kinda similar to foldLeft.
-  //The main problem that at the moment I can't solve is that I don't want that the recursion of foldRight continues
+  //The main problem that at the moment I can't solve is that I don't want that the recursion of foldLeft continues
   //if it find a None element in the head.
   def sequence[A](a: List[Option[A]]): Option[List[A]] = {
     @tailrec
     def _sequence(a:List[Option[A]])(accumulator: Option[List[A]]): Option[List[A]]= a match {
-      case Cons(h,t) => h match {
-        case Some(v) => {
+      case h :: t => h match {
+        case Some(v) =>
           _sequence(t)(Option(accumulator match {
             case None => List(v)
             case Some(value) => value.append(List(v))
           }))
-        }
         case _ => Option.empty
       }
       case _ => accumulator
@@ -183,7 +182,7 @@ object sequenceOnList {
 
   //This implementation uses foldLeft... I don't know if it's better, 'cause to stop the recursion I use
   //an exception.
-  //I'm still thinking if I can find a better solution... 
+  //I'm still thinking if I can find a better solution...
   def sequence1[A](a: List[Option[A]]): Option[List[A]] = try {
     a.foldLeft(Option.empty: Option[List[A]])((acc, elem) => elem match {
       case Some(v) =>
@@ -200,7 +199,6 @@ object sequenceOnList {
 
 // Factories
 object List {
-
   // Smart constructors
   def nil[A]: List[A] = Nil()
   def cons[A](h: A, t: List[A]): List[A] = Cons(h,t)
@@ -213,49 +211,4 @@ object List {
 
   def of[A](elem: A, n: Int): List[A] =
     if (n==0) Nil() else elem :: of(elem,n-1)
-}
-
-object ListsTest extends App {
-
-  import List._  // Working with the above lists
-  /*println(List(10,20,30,40))
-  val l = 10 :: 20 :: 30 :: 40 :: Nil() // same as above
-  println(l.head) // 10
-  println(l.tail) // 20,30,40
-  println(l append l) // 10,20,30,40,10,20,30,40
-  println(l append l toSeq) // as a list: 10,20,30,40,10,20,30,40
-  println(l get 2) // 30
-  println(of("a",10)) // a,a,a,..,a
-  println(l filter (_<=20) map ("a"+_) ) // a10, a20
-
-  assert(List(1,2,3) == List(1,2,3))
-
-  println(scala.collection.immutable.List(10,20,30,40).partition(_>15))
-  println(scala.collection.immutable.List(10,20,30,40).span(_>15))
-
-  // Ex. 1: zipRight
-  println(l.zipRight.toSeq) // List((10,0), (20,1), (30,2), (40,3))
-
-  // Ex. 2: partition
-  println(l.partition(_>15)) // ( Cons(20,Cons(30,Cons(40,Nil()))), Cons(10,Nil()) )
-
-  // Ex. 3: span
-  println(l.span(_>15)) // ( Nil(), Cons(10,Cons(20,Cons(30,Cons(40,Nil())))) )
-  println(l.span(_<15)) // ( Cons(10,Nil()), Cons(20,Cons(30,Cons(40,Nil()))) )
-
-  // Ex. 4: reduce
-  println(l.reduce(_+_)) // 100
-  try { List[Int]().reduce(_+_); assert(false) } catch { case _:UnsupportedOperationException => }
-
-  // Ex. 5: takeRight
-  println(l.takeRight(2)) // Cons(30,Cons(40,Nil()))
-
-  // Ex. 6: collect
-  println(l.collect { case x if x<15 || x>35 => x-1 }) // Cons(9, Cons(39, Nil()))
-  */
-  val l: List[Option[Int]] = List(Some(1), Some(2), Some(3))
-  println(sequenceOnList.sequence1(l)) //Some(List(1,2,3))
-
-  val l1: List[Option[Int]] = List(Some(1), None, Some(3))
-  println(sequenceOnList.sequence1(l1)) //None
 }
